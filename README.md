@@ -12,7 +12,7 @@ Automated Build
 
 ```
 $ docker run -v $(pwd):/target sonelli/android-bash
-$ file bash-*
+$ ls bash-*
 bash-x86-pie
 bash-x86-nopie
 bash-arm-pie
