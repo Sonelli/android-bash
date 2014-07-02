@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Bomb out on any errors
+set -e 
+
+# Setup the environment
+export HOME=/home/admin
+export PATH=$PATH:$HOME/droid/bin
+export ANDROID_NDK=~/droid/android-ndk
+export TARGET=/target
+
+# Download the latest version of bash
+if [ ! -f ~/bash-4.3.tar.gz ]; then
+    wget -O ~/bash-4.3.tar.gz http://ftp.gnu.org/gnu/bash/bash-4.3.tar.gz
+fi
+
+for ARCH_NAME in mips arm x86; do
+
+    for BIN_TYPE in nopie pie; do
+
+        # Start each build with a fresh source copy
+        cd ~
+        rm -rf ~/bash-4.3
+        tar xvzf bash-4.3.tar.gz
+        cd bash-4.3
+
+        # Apply the Android patch
+        patch -p0 <~/bash-android.patch
+
+        case "$ARCH_NAME" in
+            
+            x86)
+                echo "Compiling for x86"
+                HOST=i686-linux-android
+                TOOLCHAIN=${ANDROID_NDK}/default-x86-toolchain
+                COMPILER=${TOOLCHAIN}/bin/i686-linux-android-gcc
+                STRIP=${TOOLCHAIN}/bin/i686-linux-android-strip
+                SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-x86
+                ;;
+            arm)
+                echo "Compiling for ARM"
+                HOST=arm-linux
+                TOOLCHAIN=${ANDROID_NDK}/default-arm-toolchain
+                COMPILER=${TOOLCHAIN}/bin/arm-linux-androideabi-gcc
+                STRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
+                SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-arm
+                ;;
+            mips)
+                echo "Compiling for MIPS"
+                HOST=mipsel-linux-android
+                TOOLCHAIN=${ANDROID_NDK}/default-mips-toolchain
+                COMPILER=${TOOLCHAIN}/bin/mipsel-linux-android-gcc
+                STRIP=${TOOLCHAIN}/bin/mipsel-linux-android-strip
+                SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-mips
+                ;;
+
+        esac
+
+        export CC="$COMPILER --sysroot=$SYSROOT"
+        
+        if [ $BIN_TYPE == "pie" ]; then
+            export CFLAGS="-g -O2 -pie -fPIE"
+        else 
+            export CFLAGS="-g -O2"
+        fi
+
+        ./configure --host=$HOST --without-bash-malloc --disable-rpath --disable-nls
+        echo "#undef HAVE_GETPWENT" >> config.h
+
+        make
+ 
+        $STRIP bash
+        cp bash $TARGET/bash-$ARCH_NAME-$BIN_TYPE
+
+    done
+
+done

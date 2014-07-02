@@ -1,0 +1,66 @@
+diff -ru bashline.c bashline.c
+--- bashline.c	2014-02-10 00:56:58.000000000 +0000
++++ bashline.c	2014-07-01 17:50:32.724465000 +0100
+@@ -63,6 +63,10 @@
+ 
+ #include <glob/glob.h>
+ 
++#define setgrent() 0
++#define getgrent() 0
++#define endgrent() 0
++
+ #if defined (ALIAS)
+ #  include "alias.h"
+ #endif
+Only in : bashline.c.orig
+diff -ru execute_cmd.c execute_cmd.c
+--- execute_cmd.c	2014-01-31 15:54:52.000000000 +0000
++++ execute_cmd.c	2014-07-01 17:50:32.724465000 +0100
+@@ -2369,7 +2369,7 @@
+   /* If the `lastpipe' option is set with shopt, and job control is not
+      enabled, execute the last element of non-async pipelines in the
+      current shell environment. */
+-  if (lastpipe_opt && job_control == 0 && asynchronous == 0 && pipe_out == NO_PIPE && prev > 0)
++  if (lastpipe_opt && asynchronous == 0 && pipe_out == NO_PIPE && prev > 0)
+     {
+       lstdin = move_to_high_fd (0, 1, -1);
+       if (lstdin > 0)
+Only in : execute_cmd.c.orig
+diff -ru lib/readline/complete.c lib/readline/complete.c
+--- lib/readline/complete.c	2013-10-14 14:27:10.000000000 +0100
++++ lib/readline/complete.c	2014-07-01 17:50:32.724465000 +0100
+@@ -82,6 +82,8 @@
+ #  define LSTAT stat
+ #endif
+ 
++#define setpwent() 0
++
+ /* Unix version of a hidden file.  Could be different on other systems. */
+ #define HIDDEN_FILE(fname)	((fname)[0] == '.')
+ 
+Only in lib/readline: complete.c.orig
+diff -ru lib/sh/oslib.c lib/sh/oslib.c
+--- lib/sh/oslib.c	2013-10-14 14:12:57.000000000 +0100
++++ lib/sh/oslib.c	2014-07-01 17:50:32.724465000 +0100
+@@ -235,7 +235,7 @@
+ 
+ #if !defined (HAVE_MKFIFO) && defined (PROCESS_SUBSTITUTION)
+ int
+-mkfifo (path, mode)
++mkfifo__ (path, mode)
+      char *path;
+      int mode;
+ {
+diff -ru shell.c shell.c
+--- shell.c	2014-01-14 13:04:32.000000000 +0000
++++ shell.c	2014-07-01 17:50:58.134465000 +0100
+@@ -1684,7 +1684,9 @@
+ 	  current_user.shell = savestring ("/bin/sh");
+ 	  current_user.home_dir = savestring ("/");
+ 	}
++#if defined (HAVE_GETPWENT)
+       endpwent ();
++#endif
+     }
+ }
+ 
