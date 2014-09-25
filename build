@@ -27,6 +27,11 @@ for ARCH_NAME in mips arm x86; do
         # Apply the Android patch
         patch -p0 <~/bash-android.patch
 
+        # Apply all official patches
+        for PATCH in $HOME/official_patches/bash43-*; do
+            patch -p0 < $PATCH
+        done; 
+
         case "$ARCH_NAME" in
             
             x86)
@@ -60,8 +65,11 @@ for ARCH_NAME in mips arm x86; do
         
         if [ $BIN_TYPE == "pie" ]; then
             export CFLAGS="-g -O2 -pie -fPIE"
+            # Use the default platform target for pie binaries 
+            unset GOOGLE_PLATFORM
         else 
             export CFLAGS="-g -O2"
+            export GOOGLE_PLATFORM=9
         fi
 
         ./configure --host=$HOST --without-bash-malloc --disable-rpath --disable-nls
