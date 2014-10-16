@@ -12,13 +12,13 @@ Automated Build
 
 ```
 $ docker run -v $(pwd):/target sonelli/android-bash
-$ ls bash-*
-bash-x86-pie
-bash-x86-nopie
-bash-arm-pie
-bash-arm-nopie
-bash-mips-pie
-bash-mips-nopie
+$ find .
+./x86/pie/bash
+./x86/nopie/bash
+./arm/pie/bash
+./arm/nopie/bash
+./mips/pie/bash
+./mips/nopie/bash
 ```
 
 Manual Build
@@ -28,13 +28,13 @@ $ docker run -i -t -v $(pwd):/target sonelli/android-bash /home/admin/shell
 $ vi ~/build (tweak away)
 $ ~/build
 $ exit
-$ ls bash-*
-bash-x86-pie
-bash-x86-nopie
-bash-arm-pie
-bash-arm-nopie
-bash-mips-pie
-bash-mips-nopie
+$ find .
+./x86/pie/bash
+./x86/nopie/bash
+./arm/pie/bash
+./arm/nopie/bash
+./mips/pie/bash
+./mips/nopie/bash
 ```
 
 Credits

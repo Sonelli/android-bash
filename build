@@ -18,6 +18,9 @@ for ARCH_NAME in mips arm x86; do
 
     for BIN_TYPE in nopie pie; do
 
+        # Create the output directory
+        mkdir -p $TARGET/$ARCH_NAME/$BIN_TYPE;
+
         # Start each build with a fresh source copy
         cd ~
         rm -rf ~/bash-4.3
@@ -78,7 +81,7 @@ for ARCH_NAME in mips arm x86; do
         make
  
         $STRIP bash
-        cp bash $TARGET/bash-$ARCH_NAME-$BIN_TYPE
+        cp bash $TARGET/$ARCH_NAME/$BIN_TYPE/bash
 
     done
 
