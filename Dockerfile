@@ -1,5 +1,5 @@
-from quay.io/centos/centos:stream10
-MAINTAINER Paul Maddox <paul@sonelli.com>
+from --platform=linux/amd64 quay.io/centos/centos:stream10
+label org.opencontainers.image.authors="paul@sonelli.com"
 
 run yum -y update
 run dnf config-manager --set-enabled crb
@@ -13,10 +13,10 @@ run rm -rf /var/lib/puppet
 run git clone https://github.com/sonelli/puppet-android-cross-compile.git /var/lib/puppet
 run /var/lib/puppet/run
 
-ADD bash-android.patch /home/admin/
-ADD official_patches /home/admin/official_patches
-ADD build /home/admin/
-RUN chmod 755 /home/admin/build
-RUN mkdir /target
+add bash-android.patch /home/admin/
+add official_patches /home/admin/official_patches
+add build /home/admin/
+run chmod 755 /home/admin/build
+run mkdir /target
 
-CMD /home/admin/build
+cmd /home/admin/build

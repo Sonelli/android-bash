@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Bomb out on any errors
-set -e 
+set -e
 
 # Setup the environment
 export HOME=/home/admin
@@ -10,67 +10,82 @@ export ANDROID_NDK=~/droid/android-ndk
 export TARGET=/target
 
 # Download the latest version of bash
-if [ ! -f ~/bash-4.3.tar.gz ]; then
-    wget -O ~/bash-4.3.tar.gz http://ftp.gnu.org/gnu/bash/bash-4.3.tar.gz
+if [ ! -f ~/bash-5.3.tar.gz ]; then
+    wget -O ~/bash-5.3.tar.gz http://ftp.gnu.org/gnu/bash/bash-5.3.tar.gz
 fi
 
-for ARCH_NAME in mips arm x86; do
+if [ ! -d $HOME/official_53_patches ]; then
+    mkdir $HOME/official_53_patches
+    for ((i=1; i<=3; i++)); do
+        wget -O $HOME/official_53_patches/bash53-00$i http://ftp.gnu.org/gnu/bash/bash-5.3-patches/bash53-00$i
+    done
+fi
 
-    for BIN_TYPE in nopie pie; do
+for ARCH_NAME in armv7a aarch64 x86 x86_64; do
+
+    for BIN_TYPE in pie; do
 
         # Create the output directory
         mkdir -p $TARGET/$ARCH_NAME/$BIN_TYPE;
 
         # Start each build with a fresh source copy
         cd ~
-        rm -rf ~/bash-4.3
-        tar xvzf bash-4.3.tar.gz
-        cd bash-4.3
+        rm -rf ~/bash-5.3
+        tar xvzf bash-5.3.tar.gz
+        cd bash-5.3
 
-        # Apply the Android patch
-        patch -p0 <~/bash-android.patch
+        # Apply the Android patch - DISABLED - Not sure if needed for bash 5.3?
+        #patch -p0 <~/bash-android.patch
 
         # Apply all official patches
-        for PATCH in $HOME/official_patches/bash43-*; do
+        for PATCH in $HOME/official_53_patches/bash53-*; do
             patch -p0 < $PATCH
-        done; 
+        done;
 
         case "$ARCH_NAME" in
-            
+
             x86)
                 echo "Compiling for x86"
                 HOST=i686-linux-android
-                TOOLCHAIN=${ANDROID_NDK}/default-x86-toolchain
-                COMPILER=${TOOLCHAIN}/bin/i686-linux-android-gcc
-                STRIP=${TOOLCHAIN}/bin/i686-linux-android-strip
-                SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-x86
+                TOOLCHAIN=${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/
+                COMPILER=${TOOLCHAIN}/bin/i686-linux-android35-clang
+                STRIP=${TOOLCHAIN}/bin/llvm-strip
+                #SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-x86
                 ;;
-            arm)
-                echo "Compiling for ARM"
-                HOST=arm-linux
-                TOOLCHAIN=${ANDROID_NDK}/default-arm-toolchain
-                COMPILER=${TOOLCHAIN}/bin/arm-linux-androideabi-gcc
-                STRIP=${TOOLCHAIN}/bin/arm-linux-androideabi-strip
-                SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-arm
+            x86_64)
+                echo "Compiling for x86_64"
+                HOST=x86_64-linux-android
+                TOOLCHAIN=${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/
+                COMPILER=${TOOLCHAIN}/bin/x86_64-linux-android35-clang
+                STRIP=${TOOLCHAIN}/bin/llvm-strip
+                #SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-x86
                 ;;
-            mips)
-                echo "Compiling for MIPS"
-                HOST=mipsel-linux-android
-                TOOLCHAIN=${ANDROID_NDK}/default-mips-toolchain
-                COMPILER=${TOOLCHAIN}/bin/mipsel-linux-android-gcc
-                STRIP=${TOOLCHAIN}/bin/mipsel-linux-android-strip
-                SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-mips
+            armv7a)
+                echo "Compiling for armeaba-v7a"
+                HOST=arm-linux-androideabi
+                TOOLCHAIN=${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/
+                COMPILER=${TOOLCHAIN}/bin/armv7a-linux-androideabi35-clang
+                STRIP=${TOOLCHAIN}/bin/llvm-strip
+                #SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-arm
+                ;;
+            aarch64)
+                echo "Compiling for arm64-v8a"
+                HOST=aarch64-linux-android
+                TOOLCHAIN=${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/
+                COMPILER=${TOOLCHAIN}/bin/aarch64-linux-android35-clang
+                STRIP=${TOOLCHAIN}/bin/llvm-strip
+                #SYSROOT=${ANDROID_NDK}/platforms/android-19/arch-arm
                 ;;
 
         esac
 
-        export CC="$COMPILER --sysroot=$SYSROOT"
-        
+        export CC="$COMPILER" # --sysroot=$SYSROOT"
+
         if [ $BIN_TYPE == "pie" ]; then
             export CFLAGS="-g -O2 -pie -fPIE"
-            # Use the default platform target for pie binaries 
+            # Use the default platform target for pie binaries
             unset GOOGLE_PLATFORM
-        else 
+        else
             export CFLAGS="-g -O2"
             export GOOGLE_PLATFORM=9
         fi
@@ -79,7 +94,7 @@ for ARCH_NAME in mips arm x86; do
         echo "#undef HAVE_GETPWENT" >> config.h
 
         make
- 
+
         $STRIP bash
         cp bash $TARGET/$ARCH_NAME/$BIN_TYPE/bash
 
